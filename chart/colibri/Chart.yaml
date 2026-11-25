@@ -1,0 +1,6 @@
+apiVersion: v2
+name: colibri
+description: colibri local LLM engine (Qwen3.8-Flash-Next) with OpenAI-compatible API and chat UI, CUDA
+type: application
+version: 0.1.0
+appVersion: "2.2.0"

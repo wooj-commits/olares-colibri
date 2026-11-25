@@ -1,0 +1,154 @@
+{{- $oe := .Values.olaresEnv | default dict -}}
+{{- $d := .Values.defaults -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: colibri
+  namespace: '{{ .Release.Namespace }}'
+  labels:
+    app: colibri
+  annotations:
+    # HAMi / Olares GPU injection for the "colibri" container
+    applications.app.bytetrade.io/gpu-inject: "colibri"
+spec:
+  replicas: {{ .Values.workloads.colibri.replicaCount }}
+  selector:
+    matchLabels:
+      app: colibri
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: colibri
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      initContainers:
+      - name: init-permissions
+        image: docker.io/beclab/aboveos-busybox:1.37.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        command: ["sh", "-ec", "mkdir -p /models /state && chown 1000:1000 /models /state"]
+        volumeMounts:
+        - name: models
+          mountPath: /models
+        - name: state
+          mountPath: /state
+      containers:
+      - name: colibri
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+        ports:
+        - name: api
+          containerPort: 8000
+        - name: ui
+          containerPort: 8790
+        env:
+        - name: COLI_MODEL_ID
+          value: {{ index $oe "COLI_MODEL_ID" | default $d.COLI_MODEL_ID | quote }}
+        - name: COLI_RAM
+          value: {{ index $oe "COLI_RAM" | default $d.COLI_RAM | quote }}
+        - name: COLI_VRAM
+          value: {{ index $oe "COLI_VRAM" | default $d.COLI_VRAM | quote }}
+        - name: COLI_CTX
+          value: {{ index $oe "COLI_CTX" | default $d.COLI_CTX | quote }}
+        - name: COLI_EXTRA_ARGS
+          value: {{ index $oe "COLI_EXTRA_ARGS" | default $d.COLI_EXTRA_ARGS | quote }}
+        - name: COLI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: colibri-secrets
+              key: COLI_API_KEY
+              optional: true
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: colibri-secrets
+              key: HF_TOKEN
+              optional: true
+        {{- if index $oe "HF_ENDPOINT" }}
+        - name: HF_ENDPOINT
+          value: {{ index $oe "HF_ENDPOINT" | quote }}
+        {{- end }}
+        - name: COLI_GPU
+          value: "0"
+        - name: COLI_MODELS_DIR
+          value: /models
+        - name: HOME
+          value: /state
+        - name: COLI_ALLOWED_HOSTS
+          value: "*"
+        - name: TZ
+          value: America/New_York
+        resources:
+          requests:
+            cpu: {{ .Values.resources.requests.cpu | quote }}
+            memory: {{ .Values.resources.requests.memory | quote }}
+            nvidia.com/gpumem: {{ $d.GPU_MEMORY_MIB | quote }}
+          limits:
+            cpu: {{ .Values.resources.limits.cpu | quote }}
+            memory: {{ .Values.resources.limits.memory | quote }}
+            nvidia.com/gpumem: {{ $d.GPU_MEMORY_MIB | quote }}
+        # No liveness probe: a cold load of a 186 GB model takes minutes and the
+        # first start downloads it (hours). The boot status server answers / meanwhile.
+        readinessProbe:
+          tcpSocket:
+            port: 8790
+          initialDelaySeconds: 5
+          periodSeconds: 15
+        volumeMounts:
+        - name: models
+          mountPath: /models
+        - name: state
+          mountPath: /state
+        - name: dshm
+          mountPath: /dev/shm
+      volumes:
+      - name: models
+        hostPath:
+          path: '{{ .Values.userspace.appData }}/models'
+          type: DirectoryOrCreate
+      - name: state
+        hostPath:
+          path: '{{ .Values.userspace.appData }}/state'
+          type: DirectoryOrCreate
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: colibri
+  namespace: '{{ .Release.Namespace }}'
+  labels:
+    app: colibri
+spec:
+  selector:
+    app: colibri
+  ports:
+  - name: ui
+    port: 8790
+    targetPort: 8790
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: colibriapi
+  namespace: '{{ .Release.Namespace }}'
+  labels:
+    app: colibri
+spec:
+  selector:
+    app: colibri
+  ports:
+  - name: api
+    port: 8000
+    targetPort: 8000

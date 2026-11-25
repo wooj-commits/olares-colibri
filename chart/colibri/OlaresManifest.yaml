@@ -1,0 +1,144 @@
+olaresManifest.version: '0.12.0'
+olaresManifest.type: app
+apiVersion: 'v3'
+
+metadata:
+  name: colibri
+  appid: colibri
+  title: Colibri
+  description: Run Qwen3.8-Flash-Next locally with colibri (CUDA). OpenAI-compatible API + chat UI.
+  icon: https://app.cdn.olares.com/appstore/default/defaulticon.webp
+  version: 0.1.0
+  categories:
+  - AI
+  - Developer Tools
+
+entrances:
+- name: colibri
+  host: colibri
+  port: 8790
+  title: Colibri
+  icon: https://app.cdn.olares.com/appstore/default/defaulticon.webp
+  authLevel: private
+  openMethod: window
+- name: colibriapi
+  host: colibriapi
+  port: 8000
+  title: Colibri API
+  icon: https://app.cdn.olares.com/appstore/default/defaulticon.webp
+  authLevel: private
+  invisible: true
+
+permission:
+  appData: true
+
+spec:
+  versionName: '2.2.0'
+  fullDescription: |
+    colibri (https://github.com/JustVugg/colibri, Apache-2.0) runs very large
+    mixture-of-experts models by keeping the dense part in RAM/VRAM and
+    streaming experts from NVMe. This package builds its qwen38 engine with
+    CUDA (sm_80..sm_120, CUDA 12.8) and serves Qwen3.8-Flash-Next
+    (Qwen/Qwen3.8-Flash-Next-FP8, pinned revision, ~186 GB).
+
+    First start downloads the model into this app's appData (resumable,
+    progress in the container log and on the entrance page). Uninstalling the
+    app deletes the downloaded model.
+
+    Entrances (both private, Olares login):
+    - Colibri: browser chat UI
+    - Colibri API: OpenAI-compatible /v1 (and Anthropic /v1/messages)
+  developer: Vincenzo Fornaro (colibri); packaged by woojinc1205
+  website: https://github.com/JustVugg/colibri
+  sourceCode: https://github.com/wooj-commits/olares-colibri
+  submitter: woojinc1205
+  doc: https://github.com/wooj-commits/olares-colibri
+  locale:
+  - en-US
+  license:
+  - text: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  supportArch:
+  - amd64
+  onlyAdmin: true
+  accelerator:
+  - mode: nvidia
+    requiredCpu: "2"
+    limitedCpu: "22"
+    requiredMemory: 28Gi
+    limitedMemory: 80Gi
+    requiredDisk: 200Gi
+    limitedDisk: 400Gi
+    requiredGPUMemory: 22Gi
+    limitedGPUMemory: 22Gi
+
+options:
+  apiTimeout: 0
+  dependencies:
+  - name: olares
+    type: system
+    version: '>=1.12.6-0'
+
+workloadReplicas:
+  colibri: 1
+
+envs:
+- envName: COLI_MODEL_ID
+  required: true
+  type: string
+  editable: true
+  applyOnChange: true
+  default: qwen38-flash-next
+  description: "colibri catalog model id. qwen38-flash-next = official FP8 (186 GB, ~2-4 tok/s). The unsloth GGUF variants are much faster on a 24 GB card."
+  options:
+  - title: Qwen3.8-Flash-Next FP8 (186 GB)
+    value: qwen38-flash-next
+  - title: Qwen3.8-Flash-Next UD-IQ2_XS GGUF (80 GB, fast)
+    value: qwen38-flash-next-iq2xs
+  - title: Qwen3.8-Flash-Next UD-IQ3_XXS GGUF (88 GB, fast)
+    value: qwen38-flash-next-iq3
+- envName: COLI_RAM
+  required: false
+  type: string
+  editable: true
+  applyOnChange: true
+  default: "56"
+  description: "RAM budget in GB for the expert cache (keep below the 80Gi pod limit)."
+- envName: COLI_VRAM
+  required: false
+  type: string
+  editable: true
+  applyOnChange: true
+  default: "20"
+  description: "VRAM budget in GB passed as --vram (GPU share requested is 22Gi)."
+- envName: COLI_CTX
+  required: false
+  type: string
+  editable: true
+  applyOnChange: true
+  default: ""
+  description: "Context length in tokens (empty = automatic)."
+- envName: COLI_EXTRA_ARGS
+  required: false
+  type: string
+  editable: true
+  applyOnChange: true
+  default: ""
+  description: "Extra flags appended to `coli web` (e.g. --effort low)."
+- envName: COLI_API_KEY
+  required: false
+  type: password
+  editable: true
+  applyOnChange: true
+  default: ""
+  description: "Optional bearer key required by the API. Leave empty while both entrances are private."
+- envName: HF_ENDPOINT
+  required: false
+  applyOnChange: true
+  valueFrom:
+    envName: OLARES_SYSTEM_HUGGINGFACE_SERVICE
+- envName: HF_TOKEN
+  required: false
+  applyOnChange: true
+  valueFrom:
+    envName: OLARES_SYSTEM_HUGGINGFACE_TOKEN

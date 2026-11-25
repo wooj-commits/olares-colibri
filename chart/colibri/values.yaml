@@ -1,0 +1,29 @@
+image:
+  repository: ghcr.io/wooj-commits/olares-colibri
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+workloads:
+  colibri:
+    replicaCount: 1
+
+defaults:
+  COLI_MODEL_ID: qwen38-flash-next
+  COLI_RAM: "56"
+  COLI_VRAM: "20"
+  COLI_CTX: ""
+  COLI_EXTRA_ARGS: ""
+  GPU_MEMORY_MIB: "22528"
+
+resources:
+  requests:
+    cpu: "2"
+    memory: 28Gi
+  limits:
+    cpu: "22"
+    memory: 80Gi
+
+# Filled by Olares at install time
+userspace:
+  appData: /tmp/appdata
+olaresEnv: {}
