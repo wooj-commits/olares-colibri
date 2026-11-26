@@ -1,5 +1,6 @@
 image:
   repository: ghcr.io/wooj-commits/olares-colibri
+  # 0.1.1 is a chart-only fix; the boot script and image are unchanged.
   tag: "0.1.0"
   pullPolicy: IfNotPresent
 

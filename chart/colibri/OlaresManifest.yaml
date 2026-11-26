@@ -8,7 +8,7 @@ metadata:
   title: Colibri
   description: Run Qwen3.8-Flash-Next locally with colibri (CUDA). OpenAI-compatible API + chat UI.
   icon: https://app.cdn.olares.com/appstore/default/defaulticon.webp
-  version: 0.1.0
+  version: 0.1.1
   categories:
   - AI
   - Developer Tools
@@ -131,7 +131,7 @@ envs:
   editable: true
   applyOnChange: true
   default: ""
-  description: "Optional bearer key required by the API. Leave empty while both entrances are private."
+  description: "Optional bearer key required by the API. Leave empty while both entrances are private (the chart then sets COLI_ALLOW_INSECURE_BIND=1 so coli web can bind 0.0.0.0)."
 - envName: HF_ENDPOINT
   required: false
   applyOnChange: true

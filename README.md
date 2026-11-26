@@ -29,7 +29,7 @@ Uninstalling the app deletes appData, which includes the downloaded model.
 | `COLI_VRAM` | 20 | `--vram`, GB |
 | `COLI_CTX` | auto | context tokens |
 | `COLI_EXTRA_ARGS` | | extra `coli web` flags |
-| `COLI_API_KEY` | | optional bearer key on the API |
+| `COLI_API_KEY` | | optional bearer key on the API. When empty, the chart sets `COLI_ALLOW_INSECURE_BIND=1` so `coli web` can bind `0.0.0.0` behind the private Olares entrances. If you set a key, that flag is not set and the API requires the bearer token. |
 
 ## Calling the API
 

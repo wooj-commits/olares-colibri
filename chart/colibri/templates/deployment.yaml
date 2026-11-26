@@ -66,6 +66,11 @@ spec:
               name: colibri-secrets
               key: COLI_API_KEY
               optional: true
+        {{- /* coli web refuses --host 0.0.0.0 without a key. Safe here: both entrances are private. */}}
+        {{- if not (index $oe "COLI_API_KEY" | default "" | toString | trim) }}
+        - name: COLI_ALLOW_INSECURE_BIND
+          value: "1"
+        {{- end }}
         - name: HF_TOKEN
           valueFrom:
             secretKeyRef:
