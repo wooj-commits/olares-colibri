@@ -33,6 +33,9 @@ Uninstalling the app deletes appData, which includes the downloaded model.
 
 ## Calling the API
 
+Engineer-facing contract, endpoints, examples, and how (and how not) to reach
+this deployment from another app: **[docs/API.md](docs/API.md)**.
+
 Both entrances are `private` (Olares login). From a browser session or from a
 device on LarePass VPN:
 
